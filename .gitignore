@@ -1,0 +1,19 @@
+# Ignore all files named .DS_Store or ending with .log
+**/.DS_Store
+**.log
+
+# Project structure
+configs/*
+env_files/*
+secrets/*
+volumes/*
+
+# DEV
+stack.yml
+.env
+
+# Whitelist some files
+!**/.gitignore
+!**/.gitkeep
+!**/*.sample
+!**/README.md
