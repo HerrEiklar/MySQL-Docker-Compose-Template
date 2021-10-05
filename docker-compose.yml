@@ -1,0 +1,61 @@
+version: "3.3"
+
+services:
+
+  mariadb:
+    image: ${mariadb_image}
+    networks:
+      default:
+    env_file:
+      - ${env_files}/mariadb.env
+    secrets:
+      - mysql_root_password
+      - mysql_database
+      - mysql_user
+      - mysql_password
+    volumes:
+      - ${volumes}/mariadb:/var/lib/mysql
+
+  phpmyadmin:
+    image: ${phpmyadmin_image}
+    networks:
+      default:
+      traefik:
+    env_file:
+      - ${env_files}/phpmyadmin.env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.http_phpmyadmin.rule=Host(`${phpmyadmin_host}`)"
+      - "traefik.http.routers.http_phpmyadmin.entrypoints=web"
+      - "traefik.http.routers.http_phpmyadmin.middlewares=defaultchain@file,redirectToHttps@file"
+
+      - "traefik.http.routers.https_phpmyadmin.rule=Host(`${phpmyadmin_host}`)"
+      - "traefik.http.routers.https_phpmyadmin.entrypoints=websecure"
+      - "traefik.http.routers.https_phpmyadmin.middlewares=defaultchain@file"
+      - "traefik.http.routers.https_phpmyadmin.service=phpmyadmin"
+      - "traefik.http.routers.https_phpmyadmin.tls=true"
+      - "traefik.http.routers.https_phpmyadmin.tls.certresolver=hetzner01"
+      - "traefik.http.routers.https_phpmyadmin.tls.domains[0].main=${phpmyadmin_host}"
+
+      - "traefik.http.services.phpmyadmin.loadbalancer.server.port=${phpmyadmin_port}"
+      - "traefik.http.services.phpmyadmin.loadbalancer.server.scheme=${phpmyadmin_scheme}"
+      - "traefik.http.services.phpmyadmin.loadbalancer.healthcheck.interval=10s"
+      - "traefik.http.services.phpmyadmin.loadbalancer.healthcheck.port=${phpmyadmin_port}"
+      - "traefik.http.services.phpmyadmin.loadbalancer.healthcheck.scheme=${phpmyadmin_scheme}"
+      - "traefik.http.services.phpmyadmin.loadbalancer.sticky.cookie=true"
+      - "traefik.http.services.phpmyadmin.loadbalancer.passhostheader=true"
+
+networks:
+  traefik:
+    external:
+      name: traefik_bridge
+
+secrets:
+  mysql_root_password:
+    file: ${secrets}/mariadb_mysql_root_password.txt
+  mysql_database:
+    file: ${secrets}/mariadb_mysql_database.txt
+  mysql_user:
+    file: ${secrets}/mariadb_mysql_user.txt
+  mysql_password:
+    file: ${secrets}/mariadb_mysql_password.txt
